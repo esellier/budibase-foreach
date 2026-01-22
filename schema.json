@@ -1,13 +1,15 @@
 {
   "type": "component",
-  "metadata": {},
+  "metadata": {
+    "svelteMajor": 5
+  },
   "schema": {
     "name": "budibase-foreach",
     "friendlyName": "ForEach",
     "description": "ForEach component for Budibase",
     "icon": "Gears",
     "settings": [
-       {
+      {
         "type": "dataProvider",
         "key": "dataProvider",
         "label": "Data Provider"

@@ -1,43 +1,82 @@
-<script lang='ts'>
+<script lang="ts">
   import { getContext } from "svelte";
 
-  export let dataProvider;
-  export let nextLineNumber: string;
-  export let event;
+  type Row = Record<string, unknown>;
 
-  let currentLineNumber = 0;
-  let currentLineData = {};
-  console.debug("##### ForEach - INIT - currentLineNumber=",currentLineNumber);
+  type LineEvent = (payload: {
+    lineData: Row;
+    lineNumber: number;
+  }) => unknown;
 
-  $: dataContext = {
-    currentLineNumber,
-    currentLineData
-  };
+  export let dataProvider: { rows?: Row[] } | null = null;
+  export let nextLineNumber: string = "";
+  export let event: LineEvent | undefined = undefined;
 
   const { styleable, Provider } = getContext("sdk");
   const component = getContext("component");
 
-  $: nextLineChanged(nextLineNumber);
+  let currentLineNumber: number | null = null;
+  let currentLineData: Row | null = null;
 
-  function nextLineChanged(nextLineNumber: string) {
-    currentLineNumber = parseInt(nextLineNumber, 10);
-    console.debug("##### ForEach - currentLineNumber=",currentLineNumber);
+  let dataContext: {
+    currentLineNumber: number | null;
+    currentLineData: Row | null;
+  } = {
+    currentLineNumber: null,
+    currentLineData: null
+  };
 
-    if (isNaN(currentLineNumber) || currentLineNumber < 0 || currentLineNumber >= dataProvider?.rows.length) {
+  $: nextLineChanged(nextLineNumber, dataProvider?.rows ?? []);
+
+  function nextLineChanged(value: string, rows: Row[]) {
+    const text = String(value ?? "").trim();
+    const index = Number(text);
+
+    console.log("[ForEach] traitement", {
+      value,
+      index,
+      rowCount: rows.length,
+      eventType: typeof event
+    });
+
+    if (
+      text === "" ||
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= rows.length
+    ) {
       currentLineNumber = null;
       currentLineData = null;
-    }
-    else {
-      currentLineData = dataProvider?.rows[currentLineNumber];
+      dataContext = { currentLineNumber, currentLineData };
+
+      console.log("[ForEach] aucune ligne valide");
+      return;
     }
 
-    dataContext = {
-      currentLineNumber,
-      currentLineData
+    const row = rows[index];
+
+    currentLineNumber = index;
+    currentLineData = row;
+    dataContext = { currentLineNumber, currentLineData };
+
+    if (typeof event !== "function") {
+      console.error("[ForEach] event n'est pas une fonction", event);
+      return;
+    }
+
+    const payload = {
+      lineData: row,
+      lineNumber: index
     };
 
-    if (event && currentLineNumber !== null) {
-      event({lineData: currentLineData, lineNumber: currentLineNumber});
+    console.log("[ForEach] appel de event", payload);
+
+    try {
+      Promise.resolve(event(payload)).catch(error => {
+        console.error("[ForEach] échec asynchrone de event", error);
+      });
+    } catch (error) {
+      console.error("[ForEach] échec de event", error);
     }
   }
 </script>
@@ -49,5 +88,7 @@
     {:else}
       Not currently processing
     {/if}
+
+    <slot />
   </Provider>
 </div>

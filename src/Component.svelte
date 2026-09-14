@@ -7,6 +7,7 @@
 
   let currentLineNumber = 0;
   let currentLineData = {};
+  console.debug("##### ForEach - INIT - currentLineNumber=",currentLineNumber);
 
   $: dataContext = {
     currentLineNumber,
@@ -20,6 +21,7 @@
 
   function nextLineChanged(nextLineNumber: string) {
     currentLineNumber = parseInt(nextLineNumber, 10);
+    console.debug("##### ForEach - currentLineNumber=",currentLineNumber);
 
     if (isNaN(currentLineNumber) || currentLineNumber < 0 || currentLineNumber >= dataProvider?.rows.length) {
       currentLineNumber = null;
